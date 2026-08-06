@@ -223,6 +223,62 @@ DOOR: [
 "................"
 ],
 
+/* ── BOSS 2 · THE BULLWHIP — everyone panic-ordered, now look at it ── */
+BOXES: [
+"................................",
+"..............KKKKKKKK..........",
+"..............KyyyyyyK..........",
+"..............KyKKKKyK..........",
+"..............KyyyyyyK..........",
+"..............KKKKKKKK..........",
+"........KKKKKKKKKKKKKKKKKK......",
+"........KyyyyyyyyyyyyyyyyK......",
+"........KyWWWyyyyyyyyWWWyK......",
+"........KyWKWyyyyyyyyWKWyK......",
+"........KyWWWyyyyyyyyWWWyK......",
+"........KyyyyyyyyyyyyyyyyK......",
+"........KyyyyKKKKKKKKyyyyK......",
+"........KyyyyKWKWKWKKyyyyK......",
+"........KyyyyKKKKKKKKyyyyK......",
+"........KyyyyyyyyyyyyyyyyK......",
+"........KKKKKKKKKKKKKKKKKK......",
+"....KKKKKKKKKKKKKKKKKKKKKKKK....",
+"....KYYYYYYYYYYYYYYYYYYYYYYK....",
+"....KYKKYYYYYYYYYYYYYYYYKKYK....",
+"....KYYKKYYYYYYYYYYYYYYKKYYK....",
+"....KYYYKKYYYYYYYYYYYYKKYYYK....",
+"....KYYYYKKYYYYYYYYYYKKYYYYK....",
+"....KYYYKKYYYYYYYYYYYYKKYYYK....",
+"....KYYKKYYYYYYYYYYYYYYKKYYK....",
+"....KYKKYYYYYYYYYYYYYYYYKKYK....",
+"....KYYYYYYYYYYYYYYYYYYYYYYK....",
+"....KKKKKKKKKKKKKKKKKKKKKKKK....",
+".....DDDDDDDDDDDDDDDDDDDDDD.....",
+"................................",
+"................................",
+"................................"
+],
+
+/* ── the product ── */
+PHONE: [
+"................",
+"...KKKKKKKKKK...",
+"...KWWWWWWWWK...",
+"...KWBBBBBBWK...",
+"...KWBBBBBBWK...",
+"...KWBBBBBBWK...",
+"...KWBBBBBBWK...",
+"...KWBBBBBBWK...",
+"...KWBBBBBBWK...",
+"...KWBBBBBBWK...",
+"...KWBBBBBBWK...",
+"...KWWWWWWWWK...",
+"...KWWWKKWWWK...",
+"...KWWWKKWWWK...",
+"...KKKKKKKKKK...",
+"................"
+],
+
 /* ── 8×8 HUD icons ── */
 COIN: [
 "..KKKK..",

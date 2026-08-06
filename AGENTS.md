@@ -2,33 +2,44 @@
 
 ## What this is
 
-**TARIFF WARS** — a single-file, offline 8-bit browser game built to be played *live in front of a
-class* as part of a group presentation on geopolitical events and trade wars.
+**TARIFF WARS** — a single-file, offline 8-bit browser game played *live in front of a class* during
+a group presentation titled "Geopolitics, Trade Wars, and Supply Chain Disruptions."
 
-Trevor's section of the group deck argues one thesis:
+It is the **playable summary of the whole group deck**, not of any one person's slides. Read
+`Presentation 1.pdf` context below before changing content.
 
-> Inventory buffers and nearshoring operate on completely different clocks.
-> A buffer deploys in days and protects for months. Nearshoring takes years and protects for decades.
-> **Everyone who survived did both, in that order.**
+### The audience is the constraint
 
-The game exists to make the class *feel* that thesis instead of reading it off a slide. It is played
-once, by one room, driven from the keyboard by the presenter.
+This is an **intro-level survey class**. An earlier version was built around adhesive bandages,
+customs origin rulings, substantial transformation, Section 301/232, and lead times on German
+converting equipment. It was rejected as too hard and too specific, and it was correct to reject it.
 
-Live at: see `vercel.json` / `vercel ls`.
+**Rules for content:**
+- The product is a **phone**, because the deck's own anchor example (slide 3) is the iPhone's
+  journey: US designs chips, Taiwan makes them, Japan does cameras, China assembles.
+- Use **the deck's own vocabulary** so the class hears words it just heard: tariff, bullwhip effect,
+  China + 1, stock up / front-loading, just-in-time vs just-in-case, reliance on one country.
+- **Banned words** (all previously in and removed): substantial transformation, origin fraud, CBP,
+  Section 301/232, USMCA, binding ruling, tier-two visibility, working capital, capital expenditure,
+  carrying cost, spot market, transshipment, fill rate, exposure.
+- Tone is light and a bit funny. It is a 5 minute game in a survey class, not a case study.
+- No em dashes in user-facing copy. Trevor's call.
+- Short sentences. If a line cannot be read faster than it can be said aloud, it is too long.
+
+### The three metrics are deliberately plain
+
+`cash` → **MONEY**, `phones` → **PHONES YOU CAN MAKE**, `risk` → **RELIANCE ON ONE COUNTRY**.
+Do not rename these back to industry terms.
 
 ## Hard constraints (do not break these)
 
 1. **Fully offline, single file.** It runs off a classroom PC that may have no network. `build.js`
    asserts there are no external URLs in the output and fails the build if it finds one. Fonts are
    inlined as base64 woff2; all art is generated from pixel maps at runtime. No CDN, no fetch, ever.
-2. **Projector legibility.** Type scale is deliberately large and the palette is high contrast on
-   near-black. If you shrink text "to fit more in", you have broken the only deployment target.
+2. **Projector legibility.** Type scale is deliberately large and high contrast. If you shrink text
+   "to fit more in", you have broken the only deployment target.
 3. **Keyboard-driven.** `SPACE` advances, `1-4` records the room's vote, `←` steps back, `M` mutes,
-   `F` fullscreen, `R` resets. Mouse works as a fallback. The presenter is standing at a lectern.
-4. **No em dashes in user-facing copy.** Trevor's call. Code comments are fine.
-5. **Copy stays blunt.** Short sentences, concrete nouns, no clever asides. Earlier drafts were
-   literary and got rejected as hard to follow at a glance. If a line cannot be read faster than it
-   can be said aloud, it is too long.
+   `F` fullscreen, `R` resets. Mouse works as a fallback.
 
 ## Build
 
@@ -39,78 +50,64 @@ node build.js          # src/ -> public/index.html
 `build.js` inlines `src/sprites.js` and the three woff2 fonts into `src/index.src.html`.
 **Edit `src/index.src.html`, never `public/index.html`** — the latter is generated and overwritten.
 
-The build validates every sprite map is square and has no ragged rows. That check exists because a
-one-character typo in an ASCII sprite is invisible in source and produces a silently mangled sprite.
+The build validates every sprite map is square with no ragged rows. That check exists because a
+one-character typo in an ASCII sprite is invisible in source and silently mangles the sprite.
 
 ## Design decisions worth remembering
 
 **Why not NES.css or a game engine.** Deliberately hand-rolled. A CSS framework would have made it
-look like every other 8-bit web project. All 11 sprites are hand-authored ASCII maps in
+look like every other 8-bit web project. All 13 sprites are hand-authored ASCII maps in
 `src/sprites.js` rendered to inline SVG with `shape-rendering:crispEdges`.
 
 **Backgrounds are tiled pixel maps, not CSS gradients.** An earlier version used
-`repeating-linear-gradient` for the hazard stripes and a `radial-gradient` for the arena. It read as
-"high quality stapled onto 8-bit" because smooth diagonals and gradients are exactly what an 8-bit
-machine cannot do. `stairTile()` generates a true 45-degree staircase (1px rise per 1px run, seamless
-when tiled) and `checkerTile()` generates a hard dither. Both go through the same sprite renderer.
-**Do not reintroduce gradients into the arena.**
+`repeating-linear-gradient` for hazard stripes and a `radial-gradient` for the arena. It read as
+"high quality stapled onto 8-bit" because smooth diagonals and gradients are what an 8-bit machine
+cannot do. `stairTile()` generates a true 45-degree staircase (1px rise per 1px run, seamless when
+tiled) and `checkerTile()` a hard dither. **Do not reintroduce gradients into the arena.**
 
-**The impact banner does not rotate.** The first version was a rotated bordered div. Rotation
-antialiases the edges and instantly reads as vector. It is now an unrotated banner with stepped
-`box-shadow` rings and a hard offset shadow.
+**The impact banner does not rotate.** Rotation antialiases the edges and instantly reads as vector.
+It is an unrotated banner with stepped `box-shadow` rings and a hard offset shadow.
 
 **Audio is synthesized with Web Audio oscillators**, no audio files. Defaults ON, `M` toggles.
-Classroom audio is a coin flip, so check it in the room before presenting.
 
 ## The content model
 
-12 outcome cards, wide but shallow. There is no state machine or branching tree, because the game is
-played exactly once. Game state is three numbers plus two booleans:
+Wide but shallow. There is no branching tree, because the game is played once. State is three
+numbers plus two booleans:
 
-- `cash` / `fill` / `exp` — the three tracked metrics
-- `buffer` — has the player ever bought inventory cover
-- `structural` — has the player ever started building Monterrey
+- `cash` / `phones` / `risk`
+- `stocked` — has the player ever bought a buffer of parts
+- `plusone` — has the player ever started a second country (China + 1)
 
-`posture()` collapses those two booleans into `BOTH | BUFFER | STRUCT | NONE`, which drives the
-round-3 aftermath text and the final grade. This is the entire "branching".
+`posture()` collapses the booleans into `BOTH | STOCKED | PLUSONE | NONE`, which drives the round-3
+aftermath and the final grade. That is the entire "branching".
 
-Round 2 and round 3 option #2 are **dynamic** (`buildR2()` / `buildR3()`): the same slot reads
-"MONTERREY / BREAK GROUND" if you have not started building and "ACCELERATE / OPEN LINE 2" if you
-have. That is what makes a 4-option menu feel like it remembers you.
+**Dynamic options.** Round 2 option 3 ("sell spare parts") and option 4, and round 3 options 2 and 3,
+all rewrite themselves based on `stocked` / `plusone`. That is what makes a 4-option menu feel like
+it remembers you, and it is where the lesson lives:
 
-### The Vietnam trap (do not soften this)
-
-Round 1 option 3 (Ha Long Nonwovens) is written to look like the obviously correct answer: cheapest,
-fastest, clean audit, and it resolves with a **green CLEARED stamp** and drops exposure 85 → 35.
-Then round 2's aftermath reveals they were slitting Chinese master rolls, exposure snaps back to 85,
-and a red `DETAINED / ORIGIN FRAUD` banner slams down.
-
-Nothing on the option card hints at it. That is the point — the information the player needed was
-never on the card, which is the actual lesson about tier-two supplier visibility. Every playtest
-instinct to "make it fairer" should be resisted.
+- Round 2, if you stocked up: sell into the panic at a profit. If not: the warehouse is empty.
+- Round 3, if you built: switch to factory two. If not: starting one now takes two years, too late.
 
 ## Balance (verified, keep it verified)
 
-All 64 paths were simulated. Current distribution:
+All 64 paths simulated. Distribution: **S=1, A=5, B=30, C=12, D=16.**
 
-| Grade | Paths |
-|-------|-------|
-| S | 1 |
-| A | 10 |
-| B | 29 |
-| C | 8 |
-| D | 16 |
+**The single S path is `STOCK UP > CHINA + 1 > USE FACTORY TWO`.** Buffer first, then structure, then
+use it. That is the thesis and it is the unique optimum by construction.
 
-**Exactly one path reaches S: `STOCKPILE > MONTERREY > OPEN LINE 2`** — buffer first, then structure,
-then the payoff. That is the thesis, and it is the unique optimum by construction.
+`MOVE FACTORIES > PANIC BUY > USE FACTORY TWO` reaches the same end state but grades **A** at $15,
+because doing the right things in the wrong order is the failure mode the presentation is about.
 
-`MONTERREY > SPOT BUY > LINE 2` reaches the same end state but ends insolvent at grade A, because
-doing the right things in the wrong order is the failure mode the presentation is about.
+S requires `BOTH && cash>=30 && phones>=85 && risk<=60`. The `risk<=60` clause exists specifically so
+that stocking up and building but never *using* the second factory does not qualify.
 
-An earlier tuning pass made **S mathematically unreachable** (the intended path ended at -$5M). If
-you touch any `dmg` value, re-run the 64-path sweep before shipping. The three numbers that make S
-reachable are: `AFT2[1]` cash `+6.0` (pre-duty stock appreciates once the duty lands),
-`AFT3.BOTH` cash `+4.0` (the plant is producing), and round-3 `OPEN LINE 2` at `-7.0`.
+**A previous tuning pass made S mathematically unreachable.** If you touch any `dmg` value, re-run
+the 64-path sweep in the browser console before shipping.
+
+**Stocking up never changes `risk`. This is intentional and load-bearing** — the closing screen
+says so out loud. A buffer buys time, it does not reduce dependence. Never give `stocked` a risk
+discount.
 
 ## Presenting it
 
