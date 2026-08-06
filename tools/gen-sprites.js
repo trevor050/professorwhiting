@@ -116,17 +116,7 @@ icon("SCREEN", (g) => {
   rect(g, 4, 14, 11, 14, "s");
 });
 
-icon("MONEY", (g) => {
-  rect(g, 1, 4, 14, 12, "G");            // banknote
-  disc(g, 8, 8, 3.0, 2.0, "K");          // ring in the middle
-  rect(g, 3, 6, 3, 10, "K");             // corner marks
-  rect(g, 12, 6, 12, 10, "K");
-});
 
-icon("TAG", (g) => {
-  for (let i = 0; i < 11; i++) rect(g, 2 + i, 13 - i, 13, 13 - i, "R"); // tag body
-  disc(g, 11, 4, 1.7, 0, "K");           // string hole
-});
 
 icon("CLOCK", (g) => {
   disc(g, 8, 8, 6.4, 0, "s");
@@ -143,3 +133,24 @@ icon("CLOCK", (g) => {
   outline(g, "K");
   emit("PHONE8", g);
 }
+
+/* MONEY and TAG are pure straight lines, so they are authored directly rather
+   than rasterized. The generated versions read as a face and a red wedge. */
+const literal = (name, rows) => {
+  const g = rows.map((r) => r.split(""));
+  emit(name, g);
+};
+literal("MONEY", [
+  "................","................","................",
+  "KKKKKKKKKKKKKKKK","KGGGGGGGKGGGGGGK","KGGGGGGKKKKGGGGK",
+  "KGGGGGKGKGGGGGGK","KGGGGGGKKKGGGGGK","KGGGGGGGKGKGGGGK",
+  "KGGGGGKKKKGGGGGK","KGGGGGGGKGGGGGGK","KGGGGGGGGGGGGGGK",
+  "KKKKKKKKKKKKKKKK","................","................","................",
+]);
+literal("TAG", [
+  "................",".......KK.......","......KrrK......",
+  ".....KrrrrK.....","....KrrrrrrK....","...KrrrrrrrrK...",
+  "..KrrrrrrrrrrK..",".KrrrrrrrrrrrrK.",".KKKKKrrrrKKKKK.",
+  ".....KrrrrK.....",".....KrrrrK.....",".....KrrrrK.....",
+  ".....KrrrrK.....",".....KrrrrK.....",".....KKKKKK.....","................",
+]);

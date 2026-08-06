@@ -265,43 +265,43 @@ CAM: [
 "................"
 ],
 
-/* paying */
+/* paying: a banknote with a $ on it */
 MONEY: [
 "................",
 "................",
 "................",
-".KKKKKKKKKKKKKK.",
-"KGGGGGGGGGGGGGGK",
+"KKKKKKKKKKKKKKKK",
+"KGGGGGGGKGGGGGGK",
+"KGGGGGGKKKKGGGGK",
+"KGGGGGKGKGGGGGGK",
 "KGGGGGGKKKGGGGGK",
-"KGGKGGKKKKKGKGGK",
-"KGGKGKKGGGKKKGGK",
-"KGGKGKKGGGKKKGGK",
-"KGGKGKKGGGKKKGGK",
-"KGGKGGKKKKKGKGGK",
-"KGGGGGGKKKGGGGGK",
+"KGGGGGGGKGKGGGGK",
+"KGGGGGKKKKGGGGGK",
+"KGGGGGGGKGGGGGGK",
 "KGGGGGGGGGGGGGGK",
-".KKKKKKKKKKKKKK.",
+"KKKKKKKKKKKKKKKK",
+"................",
 "................",
 "................"
 ],
 
-/* charging more */
+/* charging more: prices go up */
 TAG: [
 "................",
-"................",
-"...........K.K..",
-"..........KKKRK.",
-".........KKKKK..",
-".........KKKKRK.",
-"........KRRKRRK.",
-".......KRRRRRRK.",
-"......KRRRRRRRK.",
-".....KRRRRRRRRK.",
-"....KRRRRRRRRRK.",
-"...KRRRRRRRRRRK.",
-"..KRRRRRRRRRRRK.",
-".KRRRRRRRRRRRRK.",
-"..KKKKKKKKKKKK..",
+".......KK.......",
+"......KrrK......",
+".....KrrrrK.....",
+"....KrrrrrrK....",
+"...KrrrrrrrrK...",
+"..KrrrrrrrrrrK..",
+".KrrrrrrrrrrrrK.",
+".KKKKKrrrrKKKKK.",
+".....KrrrrK.....",
+".....KrrrrK.....",
+".....KrrrrK.....",
+".....KrrrrK.....",
+".....KrrrrK.....",
+".....KKKKKK.....",
 "................"
 ],
 
