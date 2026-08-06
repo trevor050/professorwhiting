@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TARIFF WARS &#183; a supply chain boss fight</title>
+<style>
+@font-face{font-family:"PS";src:url(__PS2P__) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:"SS";src:url(__SILK__) format("woff2");font-weight:400;font-display:block}
+@font-face{font-family:"SS";src:url(__SILKB__) format("woff2");font-weight:700;font-display:block}
+
+:root{
+  --bg:#100b1e; --bg2:#1b1432; --bg3:#241a42;
+  --frame:#43308a; --ink:#fcfcfc;
+  --amber:#f8cc50; --amber2:#e8a010;
+  --red:#f04a28; --red2:#c42020;
+  --green:#58d854; --blue:#3ca0e8;
+  --steel:#8c8ca8; --dim:#b0a4d8; --dim2:#7d70a8;
+  --px:4px;
+  --dith:none; --haz:none;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#000}
+body{
+  font-family:"SS",monospace;color:var(--ink);
+  image-rendering:pixelated;
+  -webkit-font-smoothing:none;
+  cursor:default;
+}
+svg{display:block;shape-rendering:crispEdges}
+
+#crt{position:fixed;inset:0;pointer-events:none;z-index:900;
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.30) 0 2px,transparent 2px 4px)}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:901;opacity:0;background:var(--ink)}
+@keyframes fl{0%{opacity:.7}40%{opacity:0}70%{opacity:.35}100%{opacity:0}}
+.flashing{animation:fl .26s steps(1,end) both}
+@keyframes shk{
+  0%,100%{transform:translate(0,0)} 12%{transform:translate(-12px,4px)}
+  32%{transform:translate(10px,-6px)} 52%{transform:translate(-8px,4px)}
+  74%{transform:translate(6px,-2px)} 90%{transform:translate(-3px,1px)}
+}
+.shake{animation:shk .42s steps(1,end) both}
+
+#root{height:100%;display:flex;flex-direction:column;background:var(--bg);
+  padding:var(--px);gap:var(--px)}
+
+.pxb{position:relative;background:var(--bg2);
+  box-shadow:0 calc(var(--px)*-1) 0 var(--frame),0 var(--px) 0 var(--frame),
+             calc(var(--px)*-1) 0 0 var(--frame),var(--px) 0 0 var(--frame);
+  margin:var(--px)}
+
+/* ══════════ HUD ══════════ */
+#hud{flex:0 0 auto;display:flex;align-items:center;gap:calc(var(--px)*4);
+  padding:calc(var(--px)*2.5) calc(var(--px)*4)}
+#hud .co{font-family:"PS";font-size:clamp(8px,.9vw,13px);color:var(--amber);
+  line-height:1.8;white-space:nowrap}
+#hud .co i{display:block;color:var(--dim2);font-style:normal;font-size:.82em}
+.stats{display:flex;gap:calc(var(--px)*3);flex:1;align-items:center;min-width:0}
+.stat{flex:1;min-width:0;position:relative;padding:0 calc(var(--px)*2);
+  border-left:var(--px) solid #2a1f52}
+.stat:first-child{border-left:0}
+.stat .top{display:flex;align-items:center;gap:calc(var(--px)*2);margin-bottom:calc(var(--px)*1.5)}
+.stat .nm{font-family:"PS";font-size:clamp(7px,.84vw,12.5px);color:var(--dim2)}
+.stat .vl{font-family:"PS";font-size:clamp(12px,1.42vw,23px);margin-left:auto}
+.bar{display:flex;gap:2px;height:clamp(13px,1.5vw,24px)}
+.seg{flex:1;background:#251b48;box-shadow:inset 0 0 0 2px #140e28}
+.seg.on{background:var(--c,var(--green))}
+/* damage numbers fall out of the HUD into the arena, so they never sit on the value */
+.pop{position:absolute;right:calc(var(--px)*2);top:100%;font-family:"PS";z-index:5;
+  font-size:clamp(11px,1.35vw,22px);pointer-events:none;opacity:0;text-shadow:3px 3px 0 #000}
+@keyframes popup{0%{opacity:1;transform:translateY(-8px)}100%{opacity:0;transform:translateY(30px)}}
+.pop.go{animation:popup 1.15s steps(8,end) both}
+#hudright{display:flex;flex-direction:column;gap:calc(var(--px)*1.5);align-items:flex-end;
+  font-family:"PS";font-size:clamp(7px,.8vw,11px);color:var(--dim2);white-space:nowrap}
+.pips{display:flex;gap:3px}
+.pip{width:clamp(11px,1.2vw,18px);height:clamp(11px,1.2vw,18px);background:#251b48;
+  box-shadow:inset 0 0 0 3px #140e28}
+.pip.on{background:var(--amber2)} .pip.cur{background:var(--amber)}
+
+/* ══════════ STAGE ══════════ */
+#stage{flex:1 1 auto;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+
+/* arena: every texture here is a tiled pixel map, not a gradient */
+.arena{flex:1 1 auto;position:relative;display:flex;align-items:center;justify-content:center;
+  min-height:0;overflow:hidden;background-color:var(--bg);
+  background-image:var(--dith);background-size:32px 32px}
+.arena .floor{position:absolute;left:0;right:0;bottom:0;height:26%;background:var(--bg3);
+  box-shadow:0 -4px 0 #2e2158}
+.arena .floor::before{content:"";position:absolute;left:0;right:0;top:-16px;height:16px;
+  background-image:var(--dith);background-size:32px 32px;background-color:transparent;
+  filter:none;opacity:.9}
+.arena.hazard::before{content:"";position:absolute;inset:0;
+  background-image:var(--haz);background-size:64px 64px}
+.boss{position:relative;display:flex;flex-direction:column;align-items:center;
+  gap:calc(var(--px)*3);z-index:2}
+@keyframes bob{0%,50%{transform:translateY(0)}51%,100%{transform:translateY(-8px)}}
+.boss .art{animation:bob 1.6s steps(1,end) infinite}
+@keyframes drop{0%{transform:translateY(-140%)}55%{transform:translateY(8%)}
+  75%{transform:translateY(-4%)}100%{transform:translateY(0)}}
+.boss.enter .art{animation:drop .42s steps(1,end) both}
+.plate{font-family:"PS";text-align:center;line-height:1.6}
+.plate b{display:block;font-size:clamp(15px,2.2vw,36px);color:var(--red);
+  text-shadow:4px 4px 0 #000;letter-spacing:.02em}
+.plate i{display:block;font-style:normal;font-size:clamp(7.5px,.88vw,13px);
+  color:var(--dim2);margin-top:.75em}
+.plate.b2 b{color:var(--blue)} .plate.b3 b{color:var(--amber)}
+
+/* compact enemy strip on command screens */
+.bossbar{flex:0 0 auto;display:flex;align-items:center;gap:calc(var(--px)*4);
+  padding:calc(var(--px)*2) calc(var(--px)*5);background-color:var(--bg);
+  background-image:var(--dith);background-size:32px 32px;position:relative}
+.bossbar .plate{text-align:left}
+.bossbar .plate b{font-size:clamp(13px,1.7vw,28px)}
+
+/* ══════════ IMPACT BANNER (was a rotated CSS box, now a pixel banner) ══════════ */
+.slamwrap{position:absolute;z-index:6;transform:scale(4);opacity:0;
+  animation:slamin .3s steps(3,end) forwards}
+@keyframes slamin{0%{transform:scale(4);opacity:0}
+  33%{opacity:1;transform:scale(1.6)}66%{transform:scale(.88)}100%{transform:scale(1);opacity:1}}
+.slam{font-family:"PS";text-align:center;line-height:1.5;
+  background:#100b1e;padding:calc(var(--px)*3) calc(var(--px)*4);
+  box-shadow:
+    0 0 0 4px #100b1e,
+    0 0 0 8px currentColor,
+    0 0 0 12px #100b1e,
+    12px 12px 0 12px rgba(0,0,0,.6);
+}
+.slam b{display:block;font-size:clamp(15px,2.1vw,34px)}
+.slam i{display:block;font-style:normal;font-size:clamp(8px,1vw,15px);
+  margin-top:.7em;color:var(--ink)}
+.sg{color:var(--green)} .sr{color:var(--red)} .sa{color:var(--amber)} .sb{color:var(--blue)}
+
+/* ══════════ dialog ══════════ */
+.dlg{flex:0 0 auto;padding:calc(var(--px)*4) calc(var(--px)*5);min-height:28%;
+  display:flex;flex-direction:column;justify-content:center;position:relative}
+.dlg .who{font-family:"PS";font-size:clamp(8px,.92vw,13.5px);color:var(--amber);
+  margin-bottom:calc(var(--px)*3)}
+.dlg .txt{font-weight:700;font-size:clamp(17px,2.25vw,40px);line-height:1.45;
+  max-width:66ch;min-height:2.9em}
+.cursor{display:inline-block;width:.55em;height:.95em;background:var(--ink);
+  vertical-align:-.1em;animation:bl .4s steps(1) infinite}
+@keyframes bl{0%,50%{opacity:1}51%,100%{opacity:0}}
+.next{position:absolute;right:calc(var(--px)*5);bottom:calc(var(--px)*3);
+  font-family:"PS";font-size:clamp(10px,1.15vw,18px);color:var(--amber);
+  animation:bl .6s steps(1) infinite}
+.next.hide{display:none}
+
+.chips{display:flex;gap:calc(var(--px)*2);flex-wrap:wrap;margin-top:calc(var(--px)*3)}
+.chip{font-family:"PS";font-size:clamp(8px,.95vw,14px);padding:.55em .65em;
+  background:#100b1e;box-shadow:0 0 0 3px currentColor;line-height:1}
+.cup{color:var(--green)} .cdn{color:var(--red)} .cpd{color:var(--amber)} .cnu{color:var(--steel)}
+
+/* ══════════ command menu ══════════ */
+.menu{flex:1 1 auto;display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--px)*2);
+  padding:calc(var(--px)*2);min-height:0}
+.cmd{display:flex;gap:calc(var(--px)*3);align-items:flex-start;padding:calc(var(--px)*3.5);
+  cursor:pointer;position:relative;background:var(--bg2);overflow:hidden;
+  box-shadow:0 calc(var(--px)*-1) 0 var(--frame),0 var(--px) 0 var(--frame),
+             calc(var(--px)*-1) 0 0 var(--frame),var(--px) 0 0 var(--frame);
+  animation:cin .2s steps(3,end) both}
+@keyframes cin{from{opacity:0}to{opacity:1}}
+.cmd:hover,.cmd.sel{background:var(--bg3);
+  box-shadow:0 calc(var(--px)*-1) 0 var(--amber),0 var(--px) 0 var(--amber),
+             calc(var(--px)*-1) 0 0 var(--amber),var(--px) 0 0 var(--amber)}
+.cmd .key{font-family:"PS";font-size:clamp(13px,1.5vw,24px);background:var(--amber);
+  color:#100b1e;padding:.45em .55em;line-height:1;flex:0 0 auto}
+.cmd .ic{flex:0 0 auto;margin-top:2px}
+.cmd .bd{flex:1;min-width:0;display:flex;flex-direction:column}
+.cmd .t{font-family:"PS";font-size:clamp(11px,1.35vw,22px);color:var(--ink);line-height:1.3}
+.cmd .d{font-weight:700;font-size:clamp(14px,1.72vw,29px);color:var(--dim);
+  line-height:1.4;margin-top:.5em}
+.cmd .st{display:flex;gap:calc(var(--px)*4);margin-top:auto;padding-top:calc(var(--px)*3);
+  flex-wrap:wrap}
+.cmd .st span{font-family:"PS";font-size:clamp(7.5px,.88vw,13px);color:var(--dim2)}
+.cmd .st b{color:var(--amber)}
+.menuhead{font-family:"PS";font-size:clamp(9px,1.08vw,17px);color:var(--amber);
+  padding:calc(var(--px)*2.5) calc(var(--px)*5) 0;flex:0 0 auto}
+.menuhead span{color:var(--dim2)}
+
+/* ══════════ paths ══════════ */
+.paths{flex:1;display:flex;flex-direction:column;padding:calc(var(--px)*2);min-height:0}
+.paths h3{font-family:"PS";font-size:clamp(10px,1.2vw,19px);color:var(--amber);
+  padding:calc(var(--px)*2.5) calc(var(--px)*3);font-weight:400}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--px)*2);flex:1;min-height:0}
+.pcard{background:var(--bg2);padding:calc(var(--px)*3.5);display:flex;flex-direction:column;
+  gap:calc(var(--px)*2.5);overflow:hidden;
+  box-shadow:0 calc(var(--px)*-1) 0 var(--frame),0 var(--px) 0 var(--frame),
+             calc(var(--px)*-1) 0 0 var(--frame),var(--px) 0 0 var(--frame);
+  animation:cin .22s steps(3,end) both}
+.pcard .ph{display:flex;align-items:center;gap:calc(var(--px)*2.5)}
+.pcard .pt{font-family:"PS";font-size:clamp(10px,1.18vw,19px)}
+.pcard .ps{font-family:"PS";font-size:clamp(7.5px,.86vw,13px)}
+.pcard .px{font-weight:700;font-size:clamp(14px,1.7vw,28px);line-height:1.4;color:var(--dim)}
+.pcard .chips{margin-top:auto}
+
+/* ══════════ text screens ══════════ */
+.pad{padding:calc(var(--px)*4) calc(var(--px)*7);display:flex;flex-direction:column;
+  height:100%;justify-content:center;gap:calc(var(--px)*4)}
+h1{font-family:"PS";font-weight:400;font-size:clamp(22px,4.6vw,74px);line-height:1.3;
+  text-shadow:6px 6px 0 var(--red2)}
+h2{font-family:"PS";font-weight:400;font-size:clamp(14px,2.2vw,36px);line-height:1.45;
+  color:var(--amber)}
+.body{font-weight:700;font-size:clamp(16px,2.1vw,36px);line-height:1.45;max-width:64ch}
+.body em{font-style:normal;color:var(--amber)}
+.small{font-family:"PS";font-size:clamp(8px,.96vw,14.5px);color:var(--dim2);line-height:2.1}
+.small b{color:var(--amber);font-weight:400}
+.blink{animation:bl .6s steps(1) infinite}
+
+.sup{display:flex;flex-direction:column;gap:calc(var(--px)*1.5)}
+.sup .row{display:grid;grid-template-columns:auto 1.4fr 1fr .7fr;gap:calc(var(--px)*4);
+  align-items:center;padding:calc(var(--px)*2.5) calc(var(--px)*4);background:var(--bg2)}
+.sup .row.crit{background:#33132a;box-shadow:0 0 0 3px var(--red)}
+.sup .row span{font-family:"PS";font-size:clamp(9px,1.08vw,17px);color:var(--dim2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sup .row span.a{color:var(--ink)}
+.sup .row.crit span{color:var(--red)} .sup .row.crit span.a{color:var(--amber)}
+
+.rankwrap{display:flex;gap:calc(var(--px)*7);align-items:center}
+.rank{font-family:"PS";font-size:clamp(64px,12.5vw,200px);line-height:.9;
+  text-shadow:8px 8px 0 var(--red2);flex:0 0 auto;
+  animation:rin .36s steps(4,end) both}
+@keyframes rin{0%{transform:scale(3.4);opacity:0}50%{opacity:1;transform:scale(1.3)}
+  100%{transform:scale(1);opacity:1}}
+.scoregrid{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(var(--px)*2);
+  margin:calc(var(--px)*3) 0}
+.sc{background:var(--bg2);padding:calc(var(--px)*3.5);
+  box-shadow:0 calc(var(--px)*-1) 0 var(--frame),0 var(--px) 0 var(--frame),
+             calc(var(--px)*-1) 0 0 var(--frame),var(--px) 0 0 var(--frame)}
+.sc .k{font-family:"PS";font-size:clamp(7.5px,.88vw,13px);color:var(--dim2)}
+.sc .v{font-family:"PS";font-size:clamp(17px,2.7vw,44px);margin-top:.55em}
+.sc .n{font-family:"PS";font-size:clamp(7px,.8vw,11.5px);color:var(--steel);margin-top:.75em}
+
+.ck{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:calc(var(--px)*1.5)}
+.ck>div{background:var(--bg2);padding:calc(var(--px)*3.5);font-family:"PS";
+  font-size:clamp(9px,1.18vw,19px);line-height:1.5}
+.ck .h{color:var(--dim2);font-size:clamp(8px,.94vw,14px)}
+.ck .k2{color:var(--steel);font-size:clamp(8px,.96vw,14.5px)}
+.ck .g{color:var(--green)} .ck .am{color:var(--amber)}
+
+#ctrl{flex:0 0 auto;display:flex;gap:calc(var(--px)*5);align-items:center;
+  padding:calc(var(--px)*2.5) calc(var(--px)*4);font-family:"PS";
+  font-size:clamp(7px,.78vw,11px);color:#6a5f96;white-space:nowrap;overflow:hidden}
+#ctrl kbd{background:#251b48;color:var(--dim2);padding:.4em .5em;margin-right:.5em;
+  font-family:inherit}
+#ctrl .sp{flex:1}
+
+@media (max-width:820px){
+  .menu{grid-template-columns:1fr} .pgrid{grid-template-columns:1fr}
+  .ck{grid-template-columns:1fr} .rankwrap{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="hud" class="pxb">
+    <div class="co">CHP CO.<i>BANDAGE DIV.</i></div>
+    <div class="stats" id="stats"></div>
+    <div id="hudright">
+      <div class="pips" id="pips"></div>
+      <div id="snd">&#9834; SOUND ON</div>
+    </div>
+  </div>
+  <div id="stage" class="pxb"></div>
+  <div id="ctrl" class="pxb">
+    <span><kbd>SPACE</kbd>ADVANCE</span>
+    <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd>THE ROOM VOTES</span>
+    <span><kbd>&#8592;</kbd>BACK</span>
+    <span><kbd>M</kbd>MUTE</span>
+    <span><kbd>F</kbd>FULLSCREEN</span>
+    <span><kbd>R</kbd>RESET</span>
+    <span class="sp"></span>
+    <span>TARIFF WARS v1</span>
+  </div>
+</div>
+<div id="crt"></div>
+<div id="flash"></div>
+
+<script>
+"use strict";
+__SPRITES__
+
+/* ═══ sprite renderer ═══ */
+function svgOf(rows,px){
+  const w=rows[0].length,h=rows.length;
+  let out="";
+  for(let y=0;y<h;y++){
+    const row=rows[y]; let x=0;
+    while(x<w){
+      const c=row[x];
+      if(c==="."){x++;continue}
+      let run=1; while(x+run<w&&row[x+run]===c) run++;
+      out+=`<rect x="${x}" y="${y}" width="${run}" height="1" fill="${px[c]}"/>`;
+      x+=run;
+    }
+  }
+  return {w,h,body:out};
+}
+function spr(name,scale){
+  const s=svgOf(SPR[name],PAL);
+  return `<svg viewBox="0 0 ${s.w} ${s.h}" width="${s.w*scale}" height="${s.h*scale}" `+
+         `xmlns="http://www.w3.org/2000/svg">${s.body}</svg>`;
+}
+/* background textures are generated pixel maps too, so nothing on screen is a gradient */
+function tileURL(rows,pal){
+  const s=svgOf(rows,pal);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s.w} ${s.h}" `+
+            `width="${s.w}" height="${s.h}" shape-rendering="crispEdges">${s.body}</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function checkerTile(size){
+  const rows=[];
+  for(let y=0;y<size;y++){
+    let r="";
+    for(let x=0;x<size;x++) r += ((x+y)%2===0) ? "A" : ".";
+    rows.push(r);
+  }
+  return rows;
+}
+/* a real 45 degree staircase, one pixel of rise per pixel of run, seamless when tiled */
+function stairTile(size,thick){
+  const rows=[];
+  for(let y=0;y<size;y++){
+    let r="";
+    for(let x=0;x<size;x++) r += (((x - y) % size + size) % size) < thick ? "A" : ".";
+    rows.push(r);
+  }
+  return rows;
+}
+
+/* ═══ AUDIO ═══ */
+let AC=null,SND=true;
+function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){SND=false} } return AC }
+function tone(f,d,o){
+  o=o||{}; if(!SND) return; const c=ac(); if(!c) return;
+  const t=c.currentTime+(o.delay||0);
+  const osc=c.createOscillator(),g=c.createGain();
+  osc.type=o.type||"square"; osc.frequency.setValueAtTime(f,t);
+  if(o.to) osc.frequency.linearRampToValueAtTime(o.to,t+d);
+  g.gain.setValueAtTime(o.v||.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  osc.connect(g); g.connect(c.destination); osc.start(t); osc.stop(t+d+.02);
+}
+function noise(d,v,delay){
+  if(!SND) return; const c=ac(); if(!c) return;
+  const n=Math.floor(c.sampleRate*d),b=c.createBuffer(1,n,c.sampleRate),dt=b.getChannelData(0);
+  for(let i=0;i<n;i++) dt[i]=(Math.random()*2-1)*(1-i/n);
+  const s=c.createBufferSource(),g=c.createGain();
+  s.buffer=b; g.gain.value=v||.05; s.connect(g); g.connect(c.destination);
+  s.start(c.currentTime+(delay||0));
+}
+const SFX={
+  blip:function(){tone(660,.018,{v:.022})},
+  pick:function(){tone(523,.06,{v:.06});tone(784,.09,{v:.06,delay:.06})},
+  page:function(){tone(330,.05,{v:.035,type:"triangle"})},
+  hurt:function(){tone(220,.28,{to:70,type:"sawtooth",v:.07});noise(.18,.05,0)},
+  good:function(){tone(523,.07,{v:.055});tone(659,.07,{v:.055,delay:.07});tone(880,.13,{v:.055,delay:.14})},
+  crit:function(){noise(.35,.09,0);tone(110,.4,{to:52,v:.09});tone(160,.3,{to:60,type:"sawtooth",v:.05,delay:.05})},
+  boss:function(){tone(70,.55,{to:44,type:"sawtooth",v:.08});noise(.4,.06,0);tone(180,.2,{to:120,v:.05,delay:.25})},
+  win:function(){[523,659,784,1047,784,1047].forEach(function(f,i){tone(f,.16,{v:.06,delay:i*.11})})},
+  lose:function(){[392,349,294,220].forEach(function(f,i){tone(f,.28,{v:.06,type:"triangle",delay:i*.16})})}
+};
+
+/* ═══ STATE ═══ */
+const START={cash:40.0,fill:98,exp:85,buffer:false,structural:false,exited:false,pending:[],picks:[]};
+let S,step,hist;
+const MENUOPTS={};
+
+/* ═══ CONTENT ═══ */
+const BOSS={
+  1:{n:"TARIFF-30",s:"SEC. 301 · NONWOVENS & ADHESIVES",art:"STAMP",cls:""},
+  2:{n:"THE AUDIT",s:"CBP · ORIGIN ENFORCEMENT",art:"EYE",cls:"b2"},
+  3:{n:"THE BAN",s:"SEC. 232 · EXPORT CONTROL",art:"LOCK",cls:"b3"}
+};
+const SHOCK={
+  1:"A 30% duty just hit your two biggest inputs. It starts in 14 days, and your Q2 orders are already placed.\n\nThe board will fund ONE move. Not two.",
+  2:"Customs now checks where goods are really made. Cutting and repacking Chinese material does not change its origin.\n\nIf you got that wrong, you owe back duty plus a penalty.",
+  3:"China bans the adhesive chemical outright. The tariff list grows to cover finished products. And Memphis runs out of stock this month.\n\nLast round. Whatever you built has to hold."
+};
+
+const R1=[
+ {n:1,ic:"DOC",t:"ABSORB",d:"Eat the duty. Keep your price the same.",
+  st:[["COST","$9.0M/YR"],["TIME","NOW"],["DUTY","30%"]],
+  stamp:["DUTY ASSESSED",null,"sa"],dmg:{cash:-9.0},
+  res:"You pay the duty on every unit, every week. By June it is the biggest cost line on the board deck.",
+  alt:"Pay forever. Nothing gets fixed."},
+ {n:2,ic:"CRATE",t:"STOCKPILE",d:"Buy 12 months of backing material before the duty starts.",
+  st:[["COST","$14.0M"],["TIME","14 DAYS"],["DUTY","0% ON PRE-BUY"]],
+  stamp:["CLEARED",null,"sg"],dmg:{cash:-14.0,fill:1},set:{buffer:true},
+  res:"Memphis is full by the 12th, two days before the deadline. You are the only converter in the country holding pre-duty stock.",
+  alt:"Buys 12 months. Fixes nothing permanently."},
+ {n:3,ic:"SHIP",t:"VIETNAM",d:"Switch to Ha Long Nonwovens. New plant, certified, 8% cheaper. The audit came back clean.",
+  st:[["COST","$3.0M"],["TIME","45 DAYS"],["DUTY","0%"]],
+  stamp:["CLEARED",null,"sg"],dmg:{cash:-3.0,fill:-1,exp:-50},
+  res:"The first container lands in 51 days. The price matches the quote. The duty line on the paperwork reads zero.",
+  alt:"Cheapest and fastest option on the page."},
+ {n:4,ic:"FACTORY",t:"MONTERREY",d:"Build your own plant in Mexico. Tariff free under USMCA.",
+  st:[["COST","$22.0M"],["TIME","18 MONTHS"],["DUTY","0% USMCA"]],
+  stamp:["PERMIT FILED",null,"sa"],dmg:{cash:-22.0,fill:-2},set:{structural:true},
+  res:"Ground breaks in April. You order the converting line from Germany the same week. First output is Q3 2027. Until then you pay full duty with no backup stock.",
+  alt:"Right move, wrong order. No cash left to survive the wait."}
+];
+
+const R2=[
+ {n:1,ic:"CRATE",t:"SPOT BUY",d:"Buy whatever stock is left, at emergency prices.",
+  st:[["COST","$12.0M"],["TIME","21 DAYS"],["DUTY","30%"]],
+  stamp:["CLEARED",null,"sg"],dmg:{cash:-12.0,fill:8},set:{buffer:true},
+  res:"You pay 2.4 times list price. Memphis refills and you get nine months of cover. You are renting time, not buying it.",
+  alt:"Nine months of cover at a brutal price."},
+ {n:2,ic:"FACTORY",t:"",d:"",st:[],stamp:["PERMIT FILED",null,"sa"],dmg:{},res:"",alt:""},
+ {n:3,ic:"DOC",t:"RAISE PRICE",d:"Put prices up 18% across the board.",
+  st:[["GAIN","+$6.0M"],["TIME","NOW"],["RISK","VOLUME"]],
+  stamp:["POSTED",null,"sa"],dmg:{cash:6.0,fill:-9},
+  res:"Margin looks fixed on paper. Two distributors switch to private label the same quarter. The volume does not come back.",
+  alt:"Margin back on paper, volume gone for good."},
+ {n:4,ic:"SHIP",t:"INDIA",d:"Ahmedabad spins its own fiber, so the country of origin genuinely changes.",
+  st:[["COST","$6.0M"],["TIME","9 MONTHS"],["DUTY","0%"]],
+  stamp:["RULING REQUESTED",null,"sb"],dmg:{cash:-6.0},pend:{exp:-25,when:"2027"},
+  res:"Ahmedabad is approved in eight months, and customs confirms the origin in writing first. None of that helps you this quarter.",
+  alt:"A real fix, on a nine month delay. No help now."}
+];
+
+const R3=[
+ {n:1,ic:"CRATE",t:"LAST BUFFER",d:"Buy on the spot market again. Third time. It costs more and lasts less each time.",
+  st:[["COST","$15.0M"],["TIME","30 DAYS"],["DUTY","30%"]],
+  stamp:["CLEARED",null,"sa"],dmg:{cash:-15.0,fill:5},set:{buffer:true},
+  res:"Memphis refills at 3.1 times list price. That buys nine months. You will be back here in nine months.",
+  alt:"Nine more months, then this screen again."},
+ {n:2,ic:"FACTORY",t:"",d:"",st:[],stamp:["",null,"sa"],dmg:{},res:"",alt:""},
+ {n:3,ic:"DOOR",t:"EXIT",d:"Sell the product line to a competitor and walk away.",
+  st:[["GAIN","+$18.0M"],["TIME","NOW"],["RISK","TERMINAL"]],
+  stamp:["WOUND DOWN",null,"sr"],dmg:{cash:18.0,fill:-40,exp:-99},set:{exited:true},
+  res:"Your exposure hits zero because the business is gone. A competitor who built in 2026 buys your customer list for less than the stockpile cost you.",
+  alt:"Exposure hits zero because the product line does."},
+ {n:4,ic:"DOC",t:"PUBLISH THE MAP",d:"Use every source you have, raise price 10%, and show customers your full supply chain.",
+  st:[["COST","$9.0M"],["TIME","NOW"],["RISK","DISCLOSURE"]],
+  stamp:["",null,"sa"],dmg:{},res:"",alt:""}
+];
+
+const AFT2={
+ 0:{stamp:["DUTY ASSESSED",null,"sa"],dmg:{cash:-8.0,fill:-5},
+    txt:"You held your price for nine months. A competitor who moved early did not have to. You lose a national contract over a 4% price gap."},
+ 1:{stamp:["CLEARED",null,"sg"],dmg:{cash:6.0},
+    txt:"Your paperwork is clean and customs moves on. Two competitors call to ask what you would charge them for a pallet.\n\nYou sell them four, at post-duty prices. The stock you bought at the old price is now worth more than you paid."},
+ 2:{stamp:["DETAINED","ORIGIN FRAUD","sr"],dmg:{cash:-11.0,fill:-14,exp:50},crit:true,
+    txt:"Ha Long was cutting Chinese rolls and putting them in new boxes. Same fiber, same mill, same country of origin.\n\nCustoms holds 11 containers in Long Beach. You owe back duty plus a 25% penalty. Your audit only ever checked your direct supplier."},
+ 3:{stamp:["DUTY ASSESSED",null,"sa"],dmg:{cash:-7.0,fill:-6},
+    txt:"The plant is 40% built and makes nothing yet. You are still importing every roll at 30% with no stock to fall back on."}
+};
+const AFT3={
+ BOTH:{stamp:["CLEARED",null,"sg"],dmg:{cash:4.0,fill:3},
+   txt:"Monterrey shipped its first commercial batch in November, and margin comes back with it. Memphis empties the same month the plant fills the gap.\n\nThat looks like planning. It was mostly time the stockpile bought you."},
+ BUFFER:{stamp:["EXPIRED",null,"sa"],dmg:{fill:-16},
+   txt:"Memphis is empty. You are back where you started in 2026, with less cash.\n\nA buffer buys time. It bought you two years and you spent them."},
+ STRUCT:{stamp:["DUTY ASSESSED",null,"sa"],dmg:{cash:-6.0,fill:-9},
+   txt:"Monterrey is running eight months late. You are shipping 71% of orders. Two customers found another supplier during the gap."},
+ NONE:{stamp:["DETAINED","SUPPLY FAILURE","sr"],dmg:{cash:-9.0,fill:-22},crit:true,
+   txt:"No stock, no second source, and the product is now restricted. Your biggest customer sends a formal letter about supply risk."}
+};
+
+function buildR2(){
+  const o=JSON.parse(JSON.stringify(R2));
+  if(S.structural){
+    o[1].t="ACCELERATE"; o[1].d="Pay to pull the German line forward. The site is already being built.";
+    o[1].st=[["COST","$8.0M"],["PULLED TO","Q1 2027"],["DUTY","0% USMCA"]];
+    o[1].stamp=["EXPEDITED",null,"sg"]; o[1].dmg={cash:-8.0,fill:-1};
+    o[1].res="You add a second shift and charter freight for the converting line. Germany moves delivery up six months. First output is Q1 2027.";
+    o[1].alt="Six months faster. Only possible because you already started.";
+  }else{
+    o[1].t="MONTERREY"; o[1].d="Start building in Mexico now. First output is Q1 2028.";
+    o[1].st=[["COST","$20.0M"],["TIME","18 MONTHS"],["DUTY","0% USMCA"]];
+    o[1].dmg={cash:-20.0,fill:-3};
+    o[1].res="Ground breaks in November. First output is Q1 2028. That leaves 18 months where you are exposed, and you are the only one who has counted them.";
+    o[1].alt="The right move, a year late and more expensive.";
+  }
+  o[1].set={structural:true};
+  return o;
+}
+function buildR3(){
+  const o=JSON.parse(JSON.stringify(R3));
+  if(S.structural){
+    o[1].t="OPEN LINE 2"; o[1].d="Add a second line at Monterrey. Site, permit and crew already exist.";
+    o[1].st=[["COST","$7.0M"],["TIME","5 MONTHS"],["DUTY","0% USMCA"]];
+    o[1].stamp=["EXPEDITED",null,"sg"]; o[1].dmg={cash:-7.0,fill:12,exp:-35};
+    o[1].res="Line 2 is running in five months, because the hard 18 months were spent back in 2026.\n\nYou are the only supplier your biggest customer has no backup plan for.";
+    o[1].alt="Five months to double capacity. Payoff from a 2026 decision.";
+  }else{
+    o[1].t="BREAK GROUND"; o[1].d="Start building now. Germany quotes 18 months for the line and will not go faster.";
+    o[1].st=[["COST","$24.0M"],["TIME","18 MONTHS"],["OUTPUT","Q3 2029"]];
+    o[1].stamp=["BACKORDERED",null,"sr"]; o[1].dmg={cash:-24.0,fill:-8};
+    o[1].res="The order goes in. Germany confirms Q3 2029 and will not discuss it further.\n\nMoney cannot buy back time you did not start spending two years ago.";
+    o[1].alt="18 months. Money cannot speed this up.";
+  }
+  if(S.structural){
+    o[3].stamp=["POSTED",null,"sg"]; o[3].dmg={cash:-9.0,fill:9,exp:-20};
+    o[3].res="You publish the map and two customers sign three year contracts because of it. Nobody signs a three year contract because you bought stock once.";
+    o[3].alt="Turns a real supply chain into a selling point.";
+  }else{
+    o[3].stamp=["POSTED",null,"sr"]; o[3].dmg={cash:-9.0,fill:-2};
+    o[3].res="You publish a map of a supply chain you do not control. Two customers read it and start looking for a second supplier that week.";
+    o[3].alt="You are advertising a network you never built.";
+  }
+  return o;
+}
+function posture(){
+  if(S.buffer&&S.structural) return "BOTH";
+  if(S.buffer) return "BUFFER";
+  if(S.structural) return "STRUCT";
+  return "NONE";
+}
+
+const STEPS=[
+ {t:"title"},{t:"brief"},
+ {t:"boss",r:1},{t:"menu",r:1},{t:"result",r:1},{t:"paths",r:1},
+ {t:"aft",r:2},{t:"boss",r:2},{t:"menu",r:2},{t:"result",r:2},{t:"paths",r:2},
+ {t:"aft",r:3},{t:"boss",r:3},{t:"menu",r:3},{t:"result",r:3},{t:"paths",r:3},
+ {t:"rank"},{t:"lesson"}
+];
+
+/* ═══ DOM ═══ */
+const stage=document.getElementById("stage"),
+      statsEl=document.getElementById("stats"),
+      pipsEl=document.getElementById("pips"),
+      sndEl=document.getElementById("snd"),
+      flashEl=document.getElementById("flash"),
+      rootEl=document.getElementById("root");
+
+const SEGS=18;
+const STATDEF=[
+  {k:"cash",nm:"CASH",ic:"COIN",max:40},
+  {k:"fill",nm:"FILL RATE",ic:"BOX",max:100},
+  {k:"exp", nm:"EXPOSURE",ic:"HAZ",max:100}
+];
+function buildHUD(){
+  statsEl.innerHTML=STATDEF.map(function(d){
+    return '<div class="stat" data-k="'+d.k+'">'+
+      '<div class="top">'+spr(d.ic,3)+'<span class="nm">'+d.nm+'</span><span class="vl"></span></div>'+
+      '<div class="bar">'+Array.from({length:SEGS},function(){return '<i class="seg"></i>'}).join("")+'</div>'+
+      '<div class="pop"></div></div>';
+  }).join("");
+}
+function statColor(k,v){
+  if(k==="cash") return v>=20?"var(--green)":v>=8?"var(--amber)":"var(--red)";
+  if(k==="fill") return v>=90?"var(--green)":v>=75?"var(--amber)":"var(--red)";
+  return v<=35?"var(--green)":v<=65?"var(--amber)":"var(--red)";
+}
+function fmt(k,v){
+  if(k!=="cash") return Math.round(v)+"%";
+  return (v<0?"-$":"$")+Math.abs(v).toFixed(1)+"M";
+}
+function paintHUD(){
+  STATDEF.forEach(function(d){
+    const el=statsEl.querySelector('[data-k="'+d.k+'"]'), v=S[d.k], c=statColor(d.k,v);
+    el.querySelector(".vl").textContent=fmt(d.k,v);
+    el.querySelector(".vl").style.color=c;
+    const on=Math.round(Math.max(0,Math.min(1,v/d.max))*SEGS);
+    el.querySelectorAll(".seg").forEach(function(s,i){
+      s.classList.toggle("on",i<on); s.style.setProperty("--c",c);
+    });
+  });
+  pipsEl.innerHTML=[1,2,3].map(function(r){
+    const cur=STEPS[step].r===r;
+    const done=STEPS.findIndex(function(s){return s.t==="paths"&&s.r===r})<step;
+    return '<i class="pip '+(cur?"cur":done?"on":"")+'"></i>';
+  }).join("");
+}
+const CAPS={cash:[-99,999],fill:[0,100],exp:[0,100]};
+function applyDmg(d,delay){
+  if(!d) return;
+  let any=false,bad=false;
+  Object.keys(d).forEach(function(k,idx){
+    if(!d[k]) return; any=true;
+    const good = k==="exp" ? d[k]<0 : d[k]>0;
+    if(!good) bad=true;
+    setTimeout(function(){
+      S[k]=Math.min(CAPS[k][1],Math.max(CAPS[k][0],S[k]+d[k]));
+      paintHUD();
+      const el=statsEl.querySelector('[data-k="'+k+'"] .pop');
+      el.className="pop go"; el.style.color=good?"var(--green)":"var(--red)";
+      el.textContent=(d[k]>0?"+":"-")+(k==="cash"?"$":"")+Math.abs(d[k]).toFixed(k==="cash"?1:0);
+      setTimeout(function(){el.classList.remove("go")},1200);
+    },(delay||0)+idx*190);
+  });
+  if(any) setTimeout(function(){ bad?SFX.hurt():SFX.good() },delay||0);
+}
+
+/* ═══ typewriter ═══ */
+let TW={t:null,full:"",i:0,el:null,done:true,after:null};
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function nl(s){return esc(s).replace(/\n/g,"<br>")}
+function typeInto(el,text,after){
+  TW.el=el; TW.full=text; TW.i=0; TW.done=false; TW.after=after||null;
+  el.innerHTML='<span class="cursor"></span>';
+  clearInterval(TW.t);
+  TW.t=setInterval(function(){
+    TW.i++;
+    if(TW.i%2===0) SFX.blip();
+    el.innerHTML=nl(text.slice(0,TW.i))+'<span class="cursor"></span>';
+    if(TW.i>=text.length) finishType();
+  },20);
+}
+function finishType(){
+  clearInterval(TW.t); TW.done=true;
+  if(TW.el) TW.el.innerHTML=nl(TW.full);
+  const nx=document.querySelector(".next"); if(nx) nx.classList.remove("hide");
+  if(TW.after){ const f=TW.after; TW.after=null; f() }
+}
+
+/* ═══ view helpers ═══ */
+function chips(d,pend){
+  const N={cash:["CASH","$","M"],fill:["FILL","","PTS"],exp:["EXPOSURE","","PTS"]};
+  let h=Object.keys(d||{}).filter(function(k){return d[k]}).map(function(k){
+    const v=d[k],good = k==="exp"?v<0:v>0;
+    return '<span class="chip '+(good?"cup":"cdn")+'">'+N[k][0]+" "+(v>0?"+":"-")+N[k][1]+
+           Math.abs(v).toFixed(k==="cash"?1:0)+N[k][2]+'</span>';
+  }).join("");
+  if(pend) h+='<span class="chip cpd">EXPOSURE -'+Math.abs(pend.exp)+' · LANDS '+pend.when+'</span>';
+  if(!h) h='<span class="chip cnu">NO IMMEDIATE CHANGE</span>';
+  return '<div class="chips">'+h+'</div>';
+}
+function slamEl(st,pos){
+  if(!st||!st[0]) return "";
+  return '<div class="slamwrap" style="'+(pos||"right:9%;top:38%")+'">'+
+    '<div class="slam '+st[2]+'"><b>'+esc(st[0])+'</b>'+
+    (st[1]?'<i>'+esc(st[1])+'</i>':"")+'</div></div>';
+}
+function bossBlock(r,enter){
+  const b=BOSS[r], sc=Math.max(5,Math.min(12,Math.round(window.innerHeight/105)));
+  return '<div class="floor"></div><div class="boss '+(enter?"enter":"")+'">'+
+    '<div class="art">'+spr(b.art,sc)+'</div>'+
+    '<div class="plate '+b.cls+'"><b>'+esc(b.n)+'</b><i>'+esc(b.s)+'</i></div></div>';
+}
+function bossBar(r){
+  const b=BOSS[r], sc=Math.max(3,Math.min(6,Math.round(window.innerHeight/240)));
+  return '<div class="bossbar"><div class="art">'+spr(b.art,sc)+'</div>'+
+    '<div class="plate '+b.cls+'"><b>'+esc(b.n)+'</b><i>'+esc(b.s)+'</i></div></div>';
+}
+function cmdCard(o,i){
+  return '<div class="cmd" data-pick="'+i+'"><div class="key">'+o.n+'</div>'+
+    '<div class="ic">'+spr(o.ic,3)+'</div><div class="bd">'+
+    '<div class="t">'+esc(o.t)+'</div><div class="d">'+esc(o.d)+'</div>'+
+    '<div class="st">'+o.st.map(function(s){return '<span>'+esc(s[0])+' <b>'+esc(s[1])+'</b></span>'}).join("")+
+    '</div></div></div>';
+}
+
+/* ═══ RENDER ═══ */
+function draw(){
+  const st=STEPS[step];
+  paintHUD();
+  let h="";
+
+  if(st.t==="title"){
+    h='<div class="scr"><div class="pad">'+
+      '<div class="small">CONSOLIDATED HEALTH PRODUCTS &#183; BANDAGE DIVISION &#183; EST. 1961</div>'+
+      '<h1>TARIFF<br>WARS</h1><h2>A SUPPLY CHAIN BOSS FIGHT</h2>'+
+      '<div class="body">Three years. Three bosses. Two ways to survive a trade war, and only ever enough cash for one of them at a time.<br><br>The room votes. The board keeps score.</div>'+
+      '<div class="small">BUFFERS vs. NEARSHORING &#183; INVENTORY STRATEGY UNDER TRADE SHOCK<br>'+
+      'FOR PROF. WHITING, WHO TOLD US ABOUT THE BANDAGE MACHINES<br>'+
+      '<b class="blink">&#9654; PRESS SPACE TO START</b></div></div></div>';
+  }
+  else if(st.t==="brief"){
+    const rows=[["SHIP","NONWOVEN BACKING","JIANGSU, CN","38 DAYS",0],
+                ["SHIP","ACRYLIC ADHESIVE","SHANDONG, CN","45 DAYS",0],
+                ["DOC","STERILIZATION","IN-HOUSE, TN","NONE",0],
+                ["FACTORY","CONVERTING LINE","DUSSELDORF, DE","18 MONTHS",1]];
+    h='<div class="scr"><div class="pad">'+
+      '<h2>YOU MAKE ADHESIVE BANDAGES.<br>1.2 BILLION UNITS A YEAR.</h2><div class="sup">'+
+      rows.map(function(x){return '<div class="row '+(x[4]?"crit":"")+'">'+spr(x[0],3)+
+        '<span class="a">'+x[1]+'</span><span>'+x[2]+'</span><span class="a">'+x[3]+'</span></div>'}).join("")+
+      '</div><div class="body">You can buy more material tomorrow.<br>'+
+      '<em>You cannot buy more machine tomorrow. At any price.</em></div>'+
+      '<div class="small">CASH funds your moves &#183; FILL RATE is the share of orders you actually ship &#183; '+
+      'EXPOSURE is how much input a tariff can still reach<br>YOU WILL NOT MAX ALL THREE.</div></div></div>';
+  }
+  else if(st.t==="boss"){
+    h='<div class="scr"><div class="arena hazard">'+bossBlock(st.r,true)+'</div>'+
+      '<div class="dlg pxb"><div class="who">&#9654; INCOMING</div>'+
+      '<div class="txt" id="tw"></div><div class="next hide">&#9660; SPACE</div></div></div>';
+  }
+  else if(st.t==="aft"){
+    const a = st.r===2 ? AFT2[S.picks[0]] : AFT3[posture()];
+    st._a=a;
+    h='<div class="scr"><div class="arena">'+bossBlock(st.r-1,false)+slamEl(a.stamp)+'</div>'+
+      '<div class="dlg pxb"><div class="who">&#9654; WHAT YOUR LAST MOVE DID</div>'+
+      '<div class="txt" id="tw"></div><div class="next hide">&#9660; SPACE</div></div></div>';
+  }
+  else if(st.t==="menu"){
+    const opts = st.r===1?R1:st.r===2?buildR2():buildR3();
+    MENUOPTS[st.r]=opts;
+    h='<div class="scr">'+bossBar(st.r)+
+      '<div class="menuhead">&#9654; COMMAND &nbsp;<span>THE ROOM VOTES. PRESS 1 / 2 / 3 / 4</span></div>'+
+      '<div class="menu">'+opts.map(cmdCard).join("")+'</div></div>';
+  }
+  else if(st.t==="result"){
+    const o=MENUOPTS[st.r][S.picks[st.r-1]];
+    st._o=o;
+    h='<div class="scr"><div class="arena">'+bossBlock(st.r,false)+slamEl(o.stamp)+'</div>'+
+      '<div class="dlg pxb"><div class="who">&#9654; '+esc(o.t)+', CHOSEN BY THE ROOM</div>'+
+      '<div class="txt" id="tw"></div>'+chips(o.dmg,o.pend)+
+      '<div class="next hide">&#9660; SPACE</div></div></div>';
+  }
+  else if(st.t==="paths"){
+    const opts=MENUOPTS[st.r], pick=S.picks[st.r-1];
+    const others=opts.map(function(o,i){return [o,i]}).filter(function(x){return x[1]!==pick});
+    h='<div class="scr"><div class="paths"><h3>&#9654; PATHS NOT TAKEN</h3><div class="pgrid">'+
+      others.map(function(pair,i){ const o=pair[0];
+        return '<div class="pcard" style="animation-delay:'+(i*80)+'ms">'+
+          '<div class="ph">'+spr(o.ic,3)+'<span class="pt">'+esc(o.t)+'</span></div>'+
+          '<div class="ps '+o.stamp[2]+'">'+esc(o.stamp[0])+(o.stamp[1]?" · "+esc(o.stamp[1]):"")+'</div>'+
+          '<div class="px">'+esc(o.alt)+'</div>'+chips(o.dmg,o.pend)+'</div>';
+      }).join("")+'</div></div></div>';
+  }
+  else if(st.t==="rank"){
+    const v=grade();
+    h='<div class="scr"><div class="pad"><div class="small">Q4 2028 &#183; DEBRIEF</div>'+
+      '<div class="rankwrap"><div class="rank" style="color:var(--'+v.c+')">'+v.g+'</div>'+
+      '<div style="flex:1;min-width:0"><h2 style="color:var(--'+v.c+')">'+esc(v.t)+'</h2>'+
+      '<div class="scoregrid">'+
+        '<div class="sc"><div class="k">CASH</div><div class="v" style="color:'+statColor("cash",S.cash)+'">$'+S.cash.toFixed(1)+'M</div><div class="n">FROM $40.0M</div></div>'+
+        '<div class="sc"><div class="k">FILL RATE</div><div class="v" style="color:'+statColor("fill",S.fill)+'">'+Math.round(S.fill)+'%</div><div class="n">FROM 98%</div></div>'+
+        '<div class="sc"><div class="k">EXPOSURE</div><div class="v" style="color:'+statColor("exp",S.exp)+'">'+Math.round(S.exp)+'%</div><div class="n">FROM 85%</div></div>'+
+      '</div></div></div><div class="body">'+esc(v.x)+'</div>'+
+      '<div class="small">THERE IS NO CLEAN WIN HERE. THERE NEVER WAS ONE AVAILABLE. THAT IS THE FINDING, NOT A BUG.</div></div></div>';
+  }
+  else if(st.t==="lesson"){
+    h='<div class="scr"><div class="pad"><div class="small">THE FINDING</div>'+
+      '<h2>TWO STRATEGIES.<br>TWO COMPLETELY DIFFERENT CLOCKS.</h2><div class="ck">'+
+      '<div class="h"></div><div class="h">BUFFERS</div><div class="h">NEARSHORING</div>'+
+      '<div class="k2">DEPLOY IN</div><div class="g">DAYS</div><div class="am">YEARS</div>'+
+      '<div class="k2">PROTECTS FOR</div><div class="g">MONTHS</div><div class="am">DECADES</div>'+
+      '<div class="k2">YOU PAY IN</div><div class="g">WORKING CAPITAL</div><div class="am">CAPITAL EXPENDITURE</div>'+
+      '</div><h1 style="font-size:clamp(16px,3.1vw,50px);line-height:1.35;text-shadow:5px 5px 0 var(--red2)">'+
+      'EVERYONE WHO SURVIVED<br>DID <span style="color:var(--amber)">BOTH</span>. IN THAT ORDER.</h1>'+
+      '<div class="body">A buffer does not fix your exposure. It turns a shutdown into a countdown, '+
+      'and that countdown is only worth something if you spend it building the thing that takes years.</div>'+
+      '<div class="small"><b class="blink">&#9654; PRESS R TO PLAY AGAIN</b></div></div></div>';
+  }
+
+  stage.innerHTML=h;
+  stage.querySelectorAll("[data-pick]").forEach(function(el){
+    el.addEventListener("click",function(e){e.stopPropagation();choose(+el.dataset.pick)});
+  });
+
+  if(st.t==="boss"){ SFX.boss(); shake(); typeInto(document.getElementById("tw"),SHOCK[st.r]) }
+  if(st.t==="aft"){
+    const a=st._a;
+    setTimeout(function(){ a.crit?(SFX.crit(),shake(),flash()):SFX.page() },380);
+    typeInto(document.getElementById("tw"),a.txt,function(){applyDmg(a.dmg,150)});
+  }
+  if(st.t==="result"){
+    const o=st._o;
+    setTimeout(function(){ SFX.page(); if(o.stamp[2]==="sr"){SFX.crit();shake();flash()} },380);
+    typeInto(document.getElementById("tw"),o.res,function(){applyDmg(o.dmg,150)});
+  }
+  if(st.t==="paths") SFX.page();
+  if(st.t==="rank"){ const v=grade(); setTimeout(function(){ (v.g==="D"||v.g==="C")?SFX.lose():SFX.win() },300) }
+}
+function shake(){ rootEl.classList.remove("shake"); void rootEl.offsetWidth; rootEl.classList.add("shake") }
+function flash(){ flashEl.classList.remove("flashing"); void flashEl.offsetWidth; flashEl.classList.add("flashing") }
+
+function grade(){
+  if(S.exited) return {g:"D",c:"red",t:"OUT OF THE BUSINESS",
+    x:"You end with the best balance sheet on the slide and no ability to make anything. Your exposure is zero the way a closed factory has zero defects."};
+  const p=posture();
+  if(p==="BOTH"&&S.cash>=8&&S.fill>=88) return {g:"S",c:"green",t:"RESILIENT AND STILL SOLVENT",
+    x:"You bought time first, then spent that time building. That is the only order that works, and almost nobody picks it in round one. The stockpile never looked like strategy. It just kept you alive long enough for the strategy to finish."};
+  if(p==="BOTH") return {g:"A",c:"amber",t:"RESILIENT BUT NEARLY BROKE",
+    x:"Both moves were right and you paid for both. You survived. A board will still ask why you did not buy the stock a quarter earlier and cheaper."};
+  if(p==="BUFFER") return {g:"B",c:"amber",t:"SOLVENT BUT STILL EXPOSED",
+    x:"Stock bought you two years and you spent them standing still. Same duty, same supplier, same single point of failure, less cash to fix it. Insurance is not a strategy, and insurance runs out."};
+  if(p==="STRUCT") return {g:"B",c:"amber",t:"BUILT IT, BUT TOO LATE",
+    x:"You made the right long term move with nothing to cover the gap. The plant matters for a decade. You still could not ship for 18 months while it went up."};
+  return {g:"C",c:"red",t:"EXPOSED",
+    x:"No stock, no second source, and a restricted product. You optimized for cost every quarter, and the cost went up every quarter anyway."};
+}
+
+/* ═══ flow ═══ */
+function snap(){return JSON.parse(JSON.stringify(S))}
+function choose(i){
+  const st=STEPS[step]; if(st.t!=="menu") return;
+  const o=MENUOPTS[st.r][i];
+  S.picks[st.r-1]=i;
+  if(o.set) Object.assign(S,o.set);
+  if(o.pend) S.pending.push(o.pend);
+  SFX.pick();
+  const card=stage.querySelector('[data-pick="'+i+'"]');
+  if(card){
+    card.classList.add("sel");
+    stage.querySelectorAll(".cmd").forEach(function(c){ if(c!==card) c.style.opacity=".2" });
+  }
+  setTimeout(next,340);
+}
+function next(){
+  if(step>=STEPS.length-1) return;
+  if(!TW.done){ finishType(); return }
+  hist.push({step:step,state:snap()});
+  step++;
+  if(STEPS[step].t==="aft"&&STEPS[step].r===3&&S.pending.length){
+    const tot=S.pending.reduce(function(a,p){return a+p.exp},0);
+    S.pending=[];
+    setTimeout(function(){applyDmg({exp:tot},0)},1700);
+  }
+  try{ draw() }
+  catch(err){
+    /* never freeze mid-presentation: log it, skip the broken screen */
+    console.error("screen failed",STEPS[step],err);
+    if(step<STEPS.length-1){ step++; draw() }
+  }
+}
+function back(){
+  if(!hist.length) return;
+  clearInterval(TW.t); TW.done=true;
+  const h=hist.pop(); step=h.step; S=h.state; draw();
+}
+function reset(){
+  clearInterval(TW.t); TW.done=true;
+  S=JSON.parse(JSON.stringify(START)); step=0; hist=[];
+  STEPS.forEach(function(s){delete s._a;delete s._o});
+  draw();
+}
+
+document.addEventListener("keydown",function(e){
+  const k=e.key;
+  if(k===" "||k==="Enter"||k==="ArrowRight"||k==="PageDown"){
+    e.preventDefault();
+    if(!TW.done){ finishType(); return }
+    if(STEPS[step].t!=="menu") next();
+    return;
+  }
+  if(k==="ArrowLeft"||k==="Backspace"||k==="PageUp"){ e.preventDefault(); back(); return }
+  if(k>="1"&&k<="4"){ if(!TW.done) finishType(); choose(+k-1); return }
+  if(k==="r"||k==="R"){ reset(); return }
+  if(k==="m"||k==="M"){
+    SND=!SND;
+    sndEl.innerHTML=SND?"&#9834; SOUND ON":"&#9834; SOUND OFF";
+    sndEl.style.color=SND?"":"#4a4070";
+    if(SND) SFX.pick();
+    return;
+  }
+  if(k==="f"||k==="F"){ document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen() }
+});
+document.addEventListener("click",function(e){
+  if(e.target.closest("[data-pick]")||e.target.closest("#ctrl")||e.target.closest("#hud")) return;
+  if(!TW.done){ finishType(); return }
+  if(STEPS[step].t!=="menu") next();
+});
+
+/* boot */
+(function(){
+  const rs=document.documentElement.style;
+  rs.setProperty("--dith", tileURL(checkerTile(8), {A:"#1b1432"}));
+  rs.setProperty("--haz",  tileURL(stairTile(16,8), {A:"#2b2050"}));
+  buildHUD(); reset();
+})();
+</script>
+</body>
+</html>
