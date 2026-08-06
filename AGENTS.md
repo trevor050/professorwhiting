@@ -56,8 +56,20 @@ one-character typo in an ASCII sprite is invisible in source and silently mangle
 ## Design decisions worth remembering
 
 **Why not NES.css or a game engine.** Deliberately hand-rolled. A CSS framework would have made it
-look like every other 8-bit web project. All 13 sprites are hand-authored ASCII maps in
-`src/sprites.js` rendered to inline SVG with `shape-rendering:crispEdges`.
+look like every other 8-bit web project. All 16 sprites live in `src/sprites.js` as ASCII maps and
+render to inline SVG with `shape-rendering:crispEdges`.
+
+**Sprites with curves, circles or diagonals are rasterized, not hand-placed.** Hand-placing pixels
+produced a "stack of crates" that read as a toaster and a percent sign that was not round. The
+generator lives at `tools/gen-sprites.js`: it draws with `disc` / `line` / `rect` into a grid, runs
+`outline()` to wrap every shape in the outline colour, asserts the result is square, and prints maps
+to paste in. **Regenerate with it rather than editing curved sprites by hand**, and preview as
+terminal blocks before trusting a shape.
+
+**Every sprite must be legible at a glance to someone who has never seen it.** Ones that failed and
+were replaced: a crate stack meant to be "the bullwhip effect" (read as a robot), a rubber stamp for
+"the tariff" (replaced with a giant `%` whose two rings are its eyes), a cargo ship used for an
+airfreight option, and the same phone icon repeated for screen / chips / camera in the briefing.
 
 **Backgrounds are tiled pixel maps, not CSS gradients.** An earlier version used
 `repeating-linear-gradient` for hazard stripes and a `radial-gradient` for the arena. It read as

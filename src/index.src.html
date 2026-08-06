@@ -367,8 +367,8 @@ const MENUOPTS={};
 
 /* ═══ CONTENT ═══ */
 const BOSS={
-  1:{n:"THE TARIFF",s:"EVERYTHING FROM CHINA NOW COSTS 30% MORE",art:"STAMP",cls:""},
-  2:{n:"THE BULLWHIP",s:"EVERYBODY PANICKED AND ORDERED TRIPLE",art:"BOXES",cls:"b3"},
+  1:{n:"THE TARIFF",s:"EVERYTHING FROM CHINA NOW COSTS 30% MORE",art:"PCT",cls:""},
+  2:{n:"THE BULLWHIP",s:"EVERYBODY PANICKED AND ORDERED TRIPLE",art:"WAVE",cls:"b3"},
   3:{n:"THE SHUTDOWN",s:"THE PORT IS CLOSED FOR TWO MONTHS",art:"LOCK",cls:"b2"}
 };
 const SHOCK={
@@ -378,12 +378,12 @@ const SHOCK={
 };
 
 const R1=[
- {n:1,ic:"DOC",t:"EAT THE COST",d:"Pay the tariff yourself. Keep your price exactly where it is.",
+ {n:1,ic:"MONEY",t:"EAT THE COST",d:"Pay the tariff yourself. Keep your price exactly where it is.",
   st:[["COST","BIG"],["TAKES","NO TIME"],["FIXES IT?","NO"]],
   stamp:["PAID",null,"sa"],dmg:{cash:-30},
   res:"You pay it. Every phone, every month. Your customers never notice, which is nice, and your bank account absolutely does.",
   alt:"Costs a fortune and changes nothing."},
- {n:2,ic:"COIN",t:"RAISE PRICES",d:"Charge customers more and let them cover the tariff.",
+ {n:2,ic:"TAG",t:"RAISE PRICES",d:"Charge customers more and let them cover the tariff.",
   st:[["COST","NONE"],["TAKES","NO TIME"],["FIXES IT?","NO"]],
   stamp:["PRICE UP",null,"sa"],dmg:{cash:10,phones:-20},
   res:"Your phone costs more now. Some people shrug and buy it. A lot of people go look at what else is out there.",
@@ -406,17 +406,17 @@ const R2=[
   stamp:["BOUGHT HIGH",null,"sa"],dmg:{cash:-35,phones:20},set:{stocked:true},
   res:"You buy parts at the worst possible price, along with everybody else, which is exactly why the price is so bad.",
   alt:"Works, at the worst price of the year."},
- {n:2,ic:"DOC",t:"WAIT IT OUT",d:"Do nothing. Panics end. Let this one end.",
+ {n:2,ic:"CLOCK",t:"WAIT IT OUT",d:"Do nothing. Panics end. Let this one end.",
   st:[["COST","NONE"],["TAKES","MONTHS"],["FIXES IT?","NO"]],
   stamp:["WAITING",null,"sa"],dmg:{phones:-20},
   res:"You are right that the panic ends. You are also out of parts while you wait for it.",
   alt:"Free. You just cannot build much."},
- {n:3,ic:"COIN",t:"SELL SPARE PARTS",d:"",st:[],stamp:["",null,"sa"],dmg:{},res:"",alt:""},
+ {n:3,ic:"MONEY",t:"SELL SPARE PARTS",d:"",st:[],stamp:["",null,"sa"],dmg:{},res:"",alt:""},
  {n:4,ic:"FACTORY",t:"",d:"",st:[],stamp:["",null,"sa"],dmg:{},res:"",alt:""}
 ];
 
 const R3=[
- {n:1,ic:"SHIP",t:"FLY IT IN",d:"Forget the boat. Put the parts on planes.",
+ {n:1,ic:"PLANE",t:"FLY IT IN",d:"Forget the boat. Put the parts on planes.",
   st:[["COST","HUGE"],["TAKES","DAYS"],["FIXES IT?","THIS ONCE"]],
   stamp:["AIRLIFTED",null,"sa"],dmg:{cash:-40,phones:20},
   res:"It works and it is absurdly expensive. Planes hold a lot less than ships do, and they charge like it.",
@@ -540,7 +540,7 @@ const stage=document.getElementById("stage"),
 const SEGS=18;
 const STATDEF=[
   {k:"cash",  nm:"MONEY",ic:"COIN", max:100},
-  {k:"phones",nm:"PHONES YOU CAN MAKE",ic:"BOX",max:100},
+  {k:"phones",nm:"PHONES YOU CAN MAKE",ic:"PHONE8",max:100},
   {k:"risk",  nm:"RELIANCE ON ONE COUNTRY",ic:"HAZ",max:100}
 ];
 function buildHUD(){
@@ -669,9 +669,9 @@ function draw(){
       '<b class="blink">&#9654; PRESS SPACE TO START</b></div></div></div>';
   }
   else if(st.t==="brief"){
-    const rows=[["PHONE","THE SCREEN","CHINA","40% OF THE PHONE"],
-                ["PHONE","THE CHIPS","TAIWAN","30% OF THE PHONE"],
-                ["PHONE","THE CAMERA","JAPAN","15% OF THE PHONE"],
+    const rows=[["SCREEN","THE SCREEN","CHINA","40% OF THE PHONE"],
+                ["CHIP","THE CHIPS","TAIWAN","30% OF THE PHONE"],
+                ["CAM","THE CAMERA","JAPAN","15% OF THE PHONE"],
                 ["FACTORY","PUTTING IT TOGETHER","CHINA","ALL OF IT"]];
     h='<div class="scr"><div class="pad">'+
       '<h2>YOU MAKE ONE PHONE.<br>ITS PARTS COME FROM EVERYWHERE.</h2><div class="sup">'+
