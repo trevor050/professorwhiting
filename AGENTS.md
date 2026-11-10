@@ -38,20 +38,32 @@ Do not rename these back to industry terms.
    inlined as base64 woff2; all art is generated from pixel maps at runtime. No CDN, no fetch, ever.
 2. **Projector legibility.** Type scale is deliberately large and high contrast. If you shrink text
    "to fit more in", you have broken the only deployment target.
-3. **Keyboard-driven.** `SPACE` advances, `1-4` records the room's vote, `←` steps back, `M` mutes,
-   `F` fullscreen, `R` resets. Mouse works as a fallback.
+3. **Keyboard-driven.** `SPACE` advances, `1-4` records the room's vote, `←` steps back, `P` pauses,
+   `M` mutes, `F` fullscreen, `R` resets (asks twice mid-game). Mouse and touch work too: the control
+   bar is buttons, and `html.touch` (set from `(hover:none) and (pointer:coarse)` or a first
+   `touchstart`) swaps PRESS copy for TAP copy via `.kb` / `.tc` spans.
 
-## Build
+## Build and test
 
 ```bash
-node build.js          # src/ -> public/index.html
+npm run build   # node build.js: src/ -> public/index.html
+npm test        # node --test test/*.test.js (no deps)
 ```
 
-`build.js` inlines `src/sprites.js` and the three woff2 fonts into `src/index.src.html`.
-**Edit `src/index.src.html`, never `public/index.html`** — the latter is generated and overwritten.
+`build.js` inlines `src/sprites.js`, `src/game.js`, a favicon (rendered from `SPR.PCT`) and the three
+woff2 fonts into `src/index.src.html`. **Edit `src/`, never `public/index.html`.** It is committed on
+purpose (emailed / flash drive) and `test/build.test.js` fails if it is stale: rebuild before commit.
+CI (`.github/workflows/ci.yml`) runs tests, build, then `git diff --exit-code`.
 
-The build validates every sprite map is square with no ragged rows. That check exists because a
-one-character typo in an ASCII sprite is invisible in source and silently mangles the sprite.
+The build validates every sprite map is square, has no ragged rows and uses only `PAL` colours.
+
+Offline rule: the only absolute URLs allowed are `SITE` (`https://professorwhiting.vercel.app`) inside
+`<meta>` tags (Open Graph needs absolute image URLs; meta tags are never fetched). `public/og.png` is a
+1200x630 screenshot of the real title screen. If the deploy URL changes, change `SITE` in build.js.
+
+Files: `src/game.js` = all rules + copy, pure, `module.exports` guarded so it also runs inline.
+`src/index.src.html` = rendering, input, audio, persistence. Every metric change goes through
+`applyDelta()`; `simulate(picks)` replays a game in screen order and is what the tests use.
 
 ## Design decisions worth remembering
 
@@ -80,7 +92,10 @@ tiled) and `checkerTile()` a hard dither. **Do not reintroduce gradients into th
 **The impact banner does not rotate.** Rotation antialiases the edges and instantly reads as vector.
 It is an unrotated banner with stepped `box-shadow` rings and a hard offset shadow.
 
-**Audio is synthesized with Web Audio oscillators**, no audio files. Defaults ON, `M` toggles.
+**Audio is synthesized with Web Audio oscillators**, no audio files. Defaults ON, `M` toggles
+(stored in localStorage). `ac()` returns null until the first gesture (`GEST`) so a resumed run does
+not trip autoplay warnings. Music is a step sequencer in `SONGS` (16 steps/bar, MIDI numbers): `theme`
+on title/brief/lesson, `vote` on menus, silence elsewhere so the presenter can talk.
 
 ## The content model
 
@@ -101,6 +116,13 @@ it remembers you, and it is where the lesson lives:
 - Round 2, if you stocked up: sell into the panic at a profit. If not: the warehouse is empty.
 - Round 3, if you built: switch to factory two. If not: starting one now takes two years, too late.
 
+Menus are built from a deep copy (`menuFor`) and the shown menu is stored in `S.menus[r]` at pick
+time, so result/paths screens (and a refresh) show exactly what the room voted on.
+
+Economics fixed in Nov 2026, keep them: the tariff is *announced* for next month (so STOCK UP is
+front-loading, not buying at the tariffed price); RAISE PRICES has no cash gain (margin kept, volume
+lost); the briefing shows where parts end up, not invented BOM percentages.
+
 ## Balance (verified, keep it verified)
 
 All 64 paths simulated. Distribution: **S=1, A=5, B=30, C=12, D=16.**
@@ -114,8 +136,8 @@ because doing the right things in the wrong order is the failure mode the presen
 S requires `BOTH && cash>=30 && phones>=85 && risk<=60`. The `risk<=60` clause exists specifically so
 that stocking up and building but never *using* the second factory does not qualify.
 
-**A previous tuning pass made S mathematically unreachable.** If you touch any `dmg` value, re-run
-the 64-path sweep in the browser console before shipping.
+**A previous tuning pass made S mathematically unreachable.** `npm test` now pins the distribution,
+the unique S path, the wrong-order A, and stocked-never-touches-risk. Touch a `dmg` value, run it.
 
 **Stocking up never changes `risk`. This is intentional and load-bearing** — the closing screen
 says so out loud. A buffer buys time, it does not reduce dependence. Never give `stocked` a risk
@@ -127,6 +149,18 @@ Three ways onto the classroom machine, use all three: the Vercel URL, the file e
 attachment, and a copy on a flash drive. `public/index.html` is standalone — double-clicking it works
 with no server.
 
-Steps are linear (18 screens). `←` steps backwards and restores the metric snapshot, so a misfire
-mid-presentation is recoverable. `next()` wraps `draw()` in a try/catch that skips a broken screen
-rather than freezing, specifically so a bug cannot strand the presenter in front of the room.
+Steps are linear (18 screens). State model, easy to break:
+- `entry` = snapshot of `S` taken in `enterStep()` *before* the screen's effects; `hist` stores
+  `{step, state: entry}`. `back()` restores the previous screen's entry state and replays its effects.
+  (The old code snapshotted after effects: back onto a result applied damage twice, and back into a
+  menu kept the old pick's flags.)
+- Effects mutate `S` immediately; only the HUD (`shown`) animates on timers. All screen timers go
+  through `later()` and are cancelled in `enterStep()`, so nothing lands after back/reset.
+- `choose()` locks with `choosing` so a double vote cannot apply two picks.
+- Persistence: `{step, entry, hist}` in localStorage key `tariffwars.v2`, saved on every screen
+  entry; boot resumes from it. All storage access is try/catch.
+- `enterStep()` wraps `draw()` in a try/catch that skips a broken screen rather than freezing.
+
+Verify in a browser at 1920x1080, ~1024x768 and a phone with touch. Headless Chromium does not report
+`pointer:coarse`; dispatch a `touchstart` to get the touch UI. Driving it: `STEPS[step].t`, `S`, `TW.done`
+are globals. agent-browser needs `--executable-path` to the cached `chromium_headless_shell-1254`.
