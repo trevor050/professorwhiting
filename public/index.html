@@ -1087,9 +1087,10 @@ function ac(){
   if(!AC){
     try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}
     /* the first gesture may land on a screen that already has music; start it once audio is live */
-    if(AC) Promise.resolve(AC.state==="running"||AC.resume()).then(function(){ setTimeout(syncMusic,0) });
+    if(AC) Promise.resolve(AC.state==="running"||AC.resume()).then(function(){ setTimeout(syncMusic,0) },function(){});
   }
-  if(AC&&AC.state==="suspended") AC.resume();
+  /* resume() rejects if the page navigates away while it is pending (Firefox); nothing to do then */
+  if(AC&&AC.state==="suspended") AC.resume().catch(function(){});
   return AC;
 }
 function tone(f,d,o){
