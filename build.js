@@ -12,7 +12,8 @@ const path = require("path");
 const SITE = "https://professorwhiting.vercel.app";
 
 const root = __dirname;
-const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
+// Git may check source out as CRLF on Windows; the distributable is always LF.
+const read = (p) => fs.readFileSync(path.join(root, p), "utf8").replace(/\r\n?/g, "\n");
 const b64 = (f) => fs.readFileSync(path.join(root, "src/fonts", f)).toString("base64");
 
 function build() {

@@ -34,3 +34,19 @@ test("committed public/index.html matches a fresh build", () => {
   const committed = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
   assert.ok(committed === html, "public/index.html is stale: run `npm run build` and commit it");
 });
+
+test("CRLF source checkouts produce the same committed bytes", () => {
+  const source = fs.readFileSync(path.join(__dirname, "../build.js"), "utf8");
+  const sandbox = {
+    module: { exports: {} }, __dirname: path.join(__dirname, ".."), Buffer,
+    require(name) {
+      if (name !== "fs") return require(name);
+      return { ...fs, readFileSync(file, encoding) {
+        const value = fs.readFileSync(file, encoding);
+        return encoding === "utf8" ? value.replace(/\r\n?/g, "\n").replace(/\n/g, "\r\n") : value;
+      } };
+    }
+  };
+  vm.runInNewContext(source, sandbox);
+  assert.ok(sandbox.module.exports.build().html === html, "CRLF inputs change the artifact bytes");
+});

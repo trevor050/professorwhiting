@@ -164,3 +164,5 @@ Steps are linear (18 screens). State model, easy to break:
 Verify in a browser at 1920x1080, ~1024x768 and a phone with touch. Headless Chromium does not report
 `pointer:coarse`; dispatch a `touchstart` to get the touch UI. Driving it: `STEPS[step].t`, `S`, `TW.done`
 are globals. agent-browser needs `--executable-path` to the cached `chromium_headless_shell-1254`.
+
+- Build text is normalized to LF, and .gitattributes keeps fresh Windows source/artifact checkouts LF. Verify generated public/index.html against the raw HEAD blob; Git diff alone normalizes CRLF and can hide byte differences.
