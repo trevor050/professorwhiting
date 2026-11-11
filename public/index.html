@@ -1530,7 +1530,12 @@ function setPause(on){
   if(on===PAUSED) return;
   PAUSED=on; pauseEl.classList.toggle("on",on);
   document.querySelectorAll(".boss .art,.blink,.cursor").forEach(function(el){ el.style.animationPlayState=on?"paused":"" });
-  if(on) stopMusic(); else syncMusic();
+  if(on) stopMusic();
+  else {
+    /* A vote's one-shot timer may have fired while paused. Finish that confirmed vote once. */
+    if(choosing&&STEPS[step].t==="menu") next();
+    syncMusic();
+  }
 }
 function toggleSound(){
   SND=!SND; store(KEY+".snd",SND);

@@ -156,7 +156,7 @@ Steps are linear (18 screens). State model, easy to break:
   menu kept the old pick's flags.)
 - Effects mutate `S` immediately; only the HUD (`shown`) animates on timers. All screen timers go
   through `later()` and are cancelled in `enterStep()`, so nothing lands after back/reset.
-- `choose()` locks with `choosing` so a double vote cannot apply two picks.
+- `choose()` locks with `choosing` so a double vote cannot apply two picks. Resuming a paused, confirmed vote completes its transition; its one-shot timer may have expired while paused. `test/flow.test.js` pins both timer orders.
 - Persistence: `{step, entry, hist}` in localStorage key `tariffwars.v2`, saved on every screen
   entry; boot resumes from it. All storage access is try/catch.
 - `enterStep()` wraps `draw()` in a try/catch that skips a broken screen rather than freezing.
