@@ -57,7 +57,7 @@ CI (`.github/workflows/ci.yml`) runs tests, build, then `git diff --exit-code`.
 
 The build validates every sprite map is square, has no ragged rows and uses only `PAL` colours.
 
-Offline rule: the only absolute URLs allowed are `SITE` (`https://professorwhiting.vercel.app`) inside
+Offline rule: the only absolute URLs allowed are `SITE` (`https://tariffwars.trevorrosato.com`) inside
 `<meta>` tags (Open Graph needs absolute image URLs; meta tags are never fetched). `public/og.png` is a
 1200x630 screenshot of the real title screen. If the deploy URL changes, change `SITE` in build.js.
 

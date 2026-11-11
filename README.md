@@ -2,7 +2,7 @@
 
 An 8-bit supply chain boss fight, built to be played live on a projector in front of a business class. You run a phone company. Three disasters hit over three years. The room votes on what to do, the game keeps score, and at the end it tells you whether you actually understood the lecture.
 
-**Play it: [professorwhiting.vercel.app](https://professorwhiting.vercel.app)** (keyboard on a laptop, tap on a phone)
+**Play it: [tariffwars.trevorrosato.com](https://tariffwars.trevorrosato.com)** (keyboard on a laptop, tap on a phone)
 
 ![A full run: the title screen, the tariff boss dropping in, the room voting on four options, the result landing on the HUD, then an S rank with coins raining down](docs/media/gameplay.gif)
 
@@ -73,7 +73,7 @@ Things that matter in a room full of people:
 
 Use all three, because classroom PCs are like that:
 
-1. Open [professorwhiting.vercel.app](https://professorwhiting.vercel.app).
+1. Open [tariffwars.trevorrosato.com](https://tariffwars.trevorrosato.com).
 2. Email yourself [`public/index.html`](public/index.html).
 3. Put [`public/index.html`](public/index.html) on a flash drive and double-click it. No server needed.
 

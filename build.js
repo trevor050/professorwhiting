@@ -9,7 +9,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const SITE = "https://professorwhiting.vercel.app";
+const SITE = "https://tariffwars.trevorrosato.com";
 
 const root = __dirname;
 // Git may check source out as CRLF on Windows; the distributable is always LF.
